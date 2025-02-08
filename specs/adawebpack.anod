@@ -1,0 +1,121 @@
+import os
+
+from e3.anod.helper import Make
+from e3.anod.spec import Anod
+from e3.anod.loader import spec
+from e3.fs import cp, sync_tree
+
+
+class AdaWebPack(spec("gnu")):
+    version = "24.0.0"
+    tarball = "%s.zip" % version
+
+    gcc_version = "14.1.0"
+    gcc_tarball = "gcc-%s.tar.gz" % gcc_version
+    gnatllvm_tarball = "66e36d929524972353600db5d604d0189cf0308f.zip"
+    bbruntimes_tarball = "gnat-fsf-14.zip"
+
+    @property
+    def source_pkg_build(self):
+        return [
+            self.HTTPSSourceBuilder(
+                name=self.tarball,
+                url="https://github.com/godunko/adawebpack/archive/refs/tags/"
+                + self.tarball,
+            ),
+            self.HTTPSSourceBuilder(
+                name=self.gcc_tarball,
+                url="https://ftp.gnu.org/gnu/gcc/gcc-%s/%s"
+                % (self.gcc_version, self.gcc_tarball),
+            ),
+            self.HTTPSSourceBuilder(
+                name=self.gnatllvm_tarball,
+                url="https://github.com/AdaCore/gnat-llvm/archive/"
+                + self.gnatllvm_tarball,
+            ),
+            self.HTTPSSourceBuilder(
+                name=self.bbruntimes_tarball,
+                url="https://github.com/Fabien-Chouteau/bb-runtimes/archive/refs/heads/"
+                + self.bbruntimes_tarball,
+            ),
+        ]
+
+    @property
+    def build_source_list(self):
+        return [
+            Anod.Source(name=self.tarball, publish=True, dest="adawebpack"),
+            Anod.Source(name=self.gcc_tarball, publish=True, dest="gcc"),
+            Anod.Source(name=self.gnatllvm_tarball, publish=True, dest="gnat-llvm"),
+            Anod.Source(name=self.bbruntimes_tarball, publish=True, dest="bb-runtimes"),
+        ]
+
+    @property
+    def build_deps(self):
+        return [Anod.Dependency("gprbuild", track=True)] + self.compiler_deps()
+
+    def prepare_build_tree(self):
+        sync_tree(
+            os.path.join(
+                self["SRC_DIR"],
+                "gnat-llvm",
+            ),
+            os.path.join(
+                self["BUILD_DIR"],
+            ),
+        )
+
+        sync_tree(
+            os.path.join(
+                self["SRC_DIR"],
+                "gcc",
+                "gcc",
+                "ada",
+            ),
+            os.path.join(self["BUILD_DIR"], "llvm-interface", "gnat_src"),
+        )
+
+        sync_tree(
+            os.path.join(
+                self["SRC_DIR"],
+                "bb-runtimes",
+                "gnat_rts_sources",
+                "include",
+                "rts-sources",
+            ),
+            os.path.join(self["BUILD_DIR"], "llvm-interface", "rts-sources"),
+        )
+
+        sync_tree(
+            os.path.join(
+                self["SRC_DIR"],
+                "adawebpack",
+            ),
+            os.path.join(self["BUILD_DIR"], "llvm-interface", "adawebpack_src"),
+        )
+        cp(
+            os.path.join(
+                self["SRC_DIR"],
+                "adawebpack",
+                "source",
+                "rtl",
+                "Makefile.target",
+            ),
+            os.path.join(self["BUILD_DIR"], "llvm-interface", "Makefile.target"),
+        )
+
+    def artifact_build(self):
+        # This spec inherit from gh-artifact and therefore has a different
+        # build method.
+
+        self.prepare_build_tree()
+
+        for m in self.deps:
+            self.deps[m].setenv()
+
+        make = Make(
+            self,
+            exec_dir=os.path.join(self["BUILD_DIR"], "llvm-interface"),
+            makefile=os.path.join(self["BUILD_DIR"], "llvm-interface", "Makefile"),
+            jobs=1,
+        )
+        make("wasm")
