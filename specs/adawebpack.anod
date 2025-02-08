@@ -3,6 +3,7 @@ import os
 from e3.anod.helper import Make
 from e3.anod.spec import Anod
 from e3.anod.loader import spec
+from e3.diff import patch
 from e3.fs import cp, sync_tree
 
 
@@ -54,6 +55,12 @@ class AdaWebPack(spec("gnu")):
         return [Anod.Dependency("gprbuild", track=True)] + self.compiler_deps()
 
     def prepare_build_tree(self):
+        """
+        Setup build tree - copy all necessary components and apply patches
+        """
+
+        # GNAT-LLVM
+
         sync_tree(
             os.path.join(
                 self["SRC_DIR"],
@@ -63,6 +70,8 @@ class AdaWebPack(spec("gnu")):
                 self["BUILD_DIR"],
             ),
         )
+
+        # GNAT sources from FSF GCC
 
         sync_tree(
             os.path.join(
@@ -74,6 +83,8 @@ class AdaWebPack(spec("gnu")):
             os.path.join(self["BUILD_DIR"], "llvm-interface", "gnat_src"),
         )
 
+        # Runtime sources from bb-runtimes
+
         sync_tree(
             os.path.join(
                 self["SRC_DIR"],
@@ -84,6 +95,8 @@ class AdaWebPack(spec("gnu")):
             ),
             os.path.join(self["BUILD_DIR"], "llvm-interface", "rts-sources"),
         )
+
+        # AdaWebPack runtime sources
 
         sync_tree(
             os.path.join(
@@ -101,6 +114,19 @@ class AdaWebPack(spec("gnu")):
                 "Makefile.target",
             ),
             os.path.join(self["BUILD_DIR"], "llvm-interface", "Makefile.target"),
+        )
+
+        # Patch components
+
+        patch(
+            os.path.join(self["SRC_DIR"], "adawebpack", "patches", "gnat-llvm.patch"),
+            os.path.join(self["BUILD_DIR"]),
+        )
+        patch(
+            os.path.join(
+                self["SRC_DIR"], "adawebpack", "patches", "llvm_wrapper2.patch"
+            ),
+            os.path.join(self["BUILD_DIR"]),
         )
 
     def artifact_build(self):
