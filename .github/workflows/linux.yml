@@ -168,10 +168,10 @@ jobs:
 
         #    - name: Install Ada dependencies
       #      run: sudo apt-get install gnat bison
-#
-#    - name: Build GNAT native
-#      run: ./anod build gcc -v --loglevel DEBUG --enable-cleanup
-#
+
+    - name: Build GNAT native
+      run: ./anod build adawebpack -v --loglevel DEBUG --enable-cleanup
+
 #    - name: Build GDB
 #      run: ./anod build gdb -v --loglevel DEBUG --enable-cleanup
 #
