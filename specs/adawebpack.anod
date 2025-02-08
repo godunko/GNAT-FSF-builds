@@ -154,3 +154,19 @@ class AdaWebPack(spec("gnu")):
             os.path.join(self["BUILD_DIR"], "llvm-interface", "lib"),
             os.path.join(self["INSTALL_DIR"], "lib"),
         )
+
+        self.copy_llvm()
+
+    def copy_llvm(self):
+        # Copy minimal set of LLVM executables and libraries
+
+        source_bin_dir = os.path.join("/", "usr", "bin")
+        install_bin_dir = os.path.join(self["INSTALL_DIR"], "bin")
+        source_lib_dir = os.path.join("/", "usr", "lib", "llvm-16", "lib")
+        install_lib_dir = os.path.join(self["INSTALL_DIR"], "lib")
+
+        for exe in ["clang", "wasm-ld-16"]:
+            cp(os.path.join(source_bin_dir, exe), install_bin_dir)
+
+        for lib in ["libclang-cpp.so.16", "libLLVM-16.so.1"]:
+            cp(os.path.join(source_lib_dir, lib), install_lib_dir)
