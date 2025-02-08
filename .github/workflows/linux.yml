@@ -161,8 +161,9 @@ jobs:
         pip install e3-core==22.1.0
 
     - name: Install LLVM
-      run: wget https://apt.llvm.org/llvm.sh
-      run: sudo ./llvm.sh 16 all
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        sudo ./llvm.sh 16 all
 
         #    - name: Install Ada dependencies
       #      run: sudo apt-get install gnat bison
