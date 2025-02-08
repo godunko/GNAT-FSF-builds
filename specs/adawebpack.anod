@@ -145,3 +145,12 @@ class AdaWebPack(spec("gnu")):
             jobs=1,
         )
         make("wasm")
+
+        sync_tree(
+            os.path.join(self["BUILD_DIR"], "llvm-interface", "bin"),
+            os.path.join(self["INSTALL_DIR"], "bin"),
+        )
+        sync_tree(
+            os.path.join(self["BUILD_DIR"], "llvm-interface", "lib"),
+            os.path.join(self["INSTALL_DIR"], "lib"),
+        )
