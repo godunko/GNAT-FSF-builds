@@ -10,6 +10,7 @@ from e3.fs import cp, sync_tree
 class AdaWebPack(spec("gnu")):
     version = "24.0.0"
     tarball = "%s.zip" % version
+    patch_name = "adawebpack-build.patch"
 
     gcc_version = "14.1.0"
     gcc_tarball = "gcc-%s.tar.gz" % gcc_version
@@ -39,6 +40,7 @@ class AdaWebPack(spec("gnu")):
                 url="https://github.com/Fabien-Chouteau/bb-runtimes/archive/refs/heads/"
                 + self.bbruntimes_tarball,
             ),
+            self.LocalSourceBuilder(name=self.patch_name),
         ]
 
     @property
@@ -48,6 +50,9 @@ class AdaWebPack(spec("gnu")):
             Anod.Source(name=self.gcc_tarball, publish=True, dest="gcc"),
             Anod.Source(name=self.gnatllvm_tarball, publish=True, dest="gnat-llvm"),
             Anod.Source(name=self.bbruntimes_tarball, publish=True, dest="bb-runtimes"),
+            self.Source(
+                name=self.patch_name, publish=True, unpack_cmd=cp, dest="patches"
+            ),
         ]
 
     @property
@@ -128,6 +133,10 @@ class AdaWebPack(spec("gnu")):
             ),
             os.path.join(self["BUILD_DIR"]),
         )
+        patch(
+            os.path.join(self["SRC_DIR"], "patches", self.patch_name),
+            os.path.join(self["BUILD_DIR"]),
+        )
 
     def artifact_build(self):
         # This spec inherit from gh-artifact and therefore has a different
@@ -144,6 +153,7 @@ class AdaWebPack(spec("gnu")):
             makefile=os.path.join(self["BUILD_DIR"], "llvm-interface", "Makefile"),
             jobs=1,
         )
+        make.set_var("ANOD_LDFLAGS", "-Wl,-rpath='$$ORIGIN/../lib'")
         make("wasm")
 
         sync_tree(
