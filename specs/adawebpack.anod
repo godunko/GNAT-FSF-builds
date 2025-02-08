@@ -11,6 +11,7 @@ class AdaWebPack(spec("gnu")):
     version = "24.0.0"
     tarball = "%s.zip" % version
     patch_name = "adawebpack-build.patch"
+    runtimexml_name = "adawebpack-runtime.xml"
 
     gcc_version = "14.1.0"
     gcc_tarball = "gcc-%s.tar.gz" % gcc_version
@@ -41,6 +42,7 @@ class AdaWebPack(spec("gnu")):
                 + self.bbruntimes_tarball,
             ),
             self.LocalSourceBuilder(name=self.patch_name),
+            self.LocalSourceBuilder(name=self.runtimexml_name),
         ]
 
     @property
@@ -52,6 +54,9 @@ class AdaWebPack(spec("gnu")):
             Anod.Source(name=self.bbruntimes_tarball, publish=True, dest="bb-runtimes"),
             self.Source(
                 name=self.patch_name, publish=True, unpack_cmd=cp, dest="patches"
+            ),
+            self.Source(
+                name=self.runtimexml_name, publish=True, unpack_cmd=cp, dest="patches"
             ),
         ]
 
@@ -163,6 +168,14 @@ class AdaWebPack(spec("gnu")):
         sync_tree(
             os.path.join(self["BUILD_DIR"], "llvm-interface", "lib"),
             os.path.join(self["INSTALL_DIR"], "lib"),
+        )
+        cp(
+            os.path.join(
+                self["SRC_DIR"],
+                "patches",
+                "adawebpack-runtime.xml",
+            ),
+            os.path.join(self["INSTALL_DIR"], "lib", "rts-native", "runtime.xml"),
         )
 
         self.copy_llvm()
